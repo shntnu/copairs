@@ -1,0 +1,66 @@
+# Phenotypic consistency analysis for ORF/CRISPR using CORUM complex annotations
+# Corresponds to: 4.0.0.phenotypic-consistency-orf-crispr-corum-complex.py
+
+data:
+  path: "../profiles/profiles_var_mad_int_featselect_harmony.parquet"
+  metadata_regex: "^Metadata"
+
+preprocessing:
+  # Filter for ORF and CRISPR plates
+  - type: filter
+    query: "Metadata_PlateType in ['ORF', 'CRISPR']"
+  
+  # Remove features with NaN values
+  - type: remove_nan_features
+  
+  # Note: Original script uses CORUM complex annotations
+  # This would require merging external metadata
+  # - type: merge_metadata
+  #   source: "annotations/corum_complex_annotations.csv"
+  #   on: ["Metadata_JCP2022"]
+  
+  # Remove rows with missing CORUM annotations
+  - type: dropna
+    columns: ["Metadata_CORUM_identifier"]
+  
+  # Filter out empty wells
+  - type: filter
+    query: "Metadata_JCP2022 != 'JCP2022_999999'"
+  
+  # Keep only treatments
+  - type: filter
+    query: "Metadata_control_type == 'trt'"
+  
+  # Split pipe-separated CORUM identifiers if needed
+  - type: split_multilabel
+    column: "Metadata_CORUM_identifier"
+    separator: "|"
+  
+  # Aggregate replicates by taking median
+  - type: aggregate_replicates
+    groupby: ["Metadata_JCP2022", "Metadata_CORUM_identifier"]
+
+average_precision:
+  multilabel: true
+  params:
+    pos_sameby: ["Metadata_CORUM_identifier"]
+    pos_diffby: []
+    neg_sameby: []
+    neg_diffby: ["Metadata_CORUM_identifier"]
+    multilabel_col: "Metadata_CORUM_identifier"
+    batch_size: 20000
+    distance: "cosine"
+
+mean_average_precision:
+  params:
+    sameby: ["Metadata_CORUM_identifier"]
+    null_size: 20000
+    threshold: 0.05
+    seed: 12527
+
+output:
+  path: "output/phenotypic-consistency-var_mad_int_featselect_harmony-corum-complex-retrieval.csv.gz"
+  save_ap_scores: false
+
+plotting:
+  enabled: false

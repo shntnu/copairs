@@ -1,0 +1,45 @@
+# Phenotypic activity analysis for ORF perturbations with PCA
+# Corresponds to: 0.2.1.phenotypic-activity-orf-PCA.py
+
+data:
+  path: "../profiles/integrated/PCA/profiles_wellpos_cc_var_mad_outlier_featselect_sphering_harmony_PCA.parquet"
+  metadata_regex: "^Metadata"
+
+preprocessing:
+  # Filter for ORF plates only
+  - type: filter
+    query: "Metadata_PlateType == 'ORF'"
+  
+  # Remove features with NaN values
+  - type: remove_nan_features
+  
+  # Filter out empty wells
+  - type: filter
+    query: "Metadata_JCP2022 != 'JCP2022_999999'"
+  
+  # Keep only treatments
+  - type: filter
+    query: "Metadata_control_type == 'trt'"
+
+average_precision:
+  params:
+    pos_sameby: ["Metadata_JCP2022"]
+    pos_diffby: []
+    neg_sameby: []
+    neg_diffby: ["Metadata_JCP2022"]
+    batch_size: 20000
+    distance: "cosine"
+
+mean_average_precision:
+  params:
+    sameby: ["Metadata_JCP2022"]
+    null_size: 20000
+    threshold: 0.1
+    seed: 12527
+
+output:
+  path: "output/phenotypic-activity-wellpos_cc_var_mad_outlier_featselect_sphering_harmony_PCA-orf.csv.gz"
+  save_ap_scores: false
+
+plotting:
+  enabled: false

@@ -1,0 +1,60 @@
+# Phenotypic consistency analysis for all compounds with PCA
+# Corresponds to: 1.1.1.phenotypic-consistency-compounds-PCA.py
+
+data:
+  path: "../profiles/integrated/PCA/profiles_wellpos_cc_var_mad_outlier_featselect_sphering_harmony_PCA.parquet"
+  metadata_regex: "^Metadata"
+
+preprocessing:
+  # Filter for COMPOUND plates only
+  - type: filter
+    query: "Metadata_PlateType == 'COMPOUND'"
+  
+  # Remove features with NaN values
+  - type: remove_nan_features
+  
+  # Remove rows with missing targets
+  - type: dropna
+    columns: ["Metadata_target"]
+  
+  # Filter out empty wells
+  - type: filter
+    query: "Metadata_JCP2022 != 'JCP2022_999999'"
+  
+  # Keep only treatments
+  - type: filter
+    query: "Metadata_control_type == 'trt'"
+  
+  # Split pipe-separated target values
+  - type: split_multilabel
+    column: "Metadata_target"
+    separator: "|"
+  
+  # Aggregate replicates by taking median
+  - type: aggregate_replicates
+    groupby: ["Metadata_JCP2022", "Metadata_target"]
+
+average_precision:
+  multilabel: true
+  params:
+    pos_sameby: ["Metadata_target"]
+    pos_diffby: []
+    neg_sameby: []
+    neg_diffby: ["Metadata_target"]
+    multilabel_col: "Metadata_target"
+    batch_size: 20000
+    distance: "cosine"
+
+mean_average_precision:
+  params:
+    sameby: ["Metadata_target"]
+    null_size: 20000
+    threshold: 0.05
+    seed: 12527
+
+output:
+  path: "output/phenotypic-consistency-wellpos_cc_var_mad_outlier_featselect_sphering_harmony_PCA-target-retrieval.csv.gz"
+  save_ap_scores: false
+
+plotting:
+  enabled: false

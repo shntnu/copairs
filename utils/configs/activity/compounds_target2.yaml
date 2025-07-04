@@ -1,0 +1,51 @@
+# Phenotypic activity analysis for TARGET2 compounds
+# Corresponds to: 0.0.0.phenotypic-activity-target2.py
+
+data:
+  path: "../profiles/profiles_var_mad_int_featselect_harmony.parquet"
+  metadata_regex: "^Metadata"
+
+preprocessing:
+  # Note: These steps require runner extensions for metadata merging
+  # For now, assuming metadata is already in the parquet file
+  
+  # Filter for TARGET2 plates only
+  - type: filter
+    query: "Metadata_PlateType == 'TARGET2'"
+  
+  # Remove specific problematic sources
+  - type: filter
+    query: "Metadata_Source not in ['source_4', 'source_13']"
+  
+  # Apply base preprocessing
+  # Note: YAML doesn't support includes natively, so copying base steps
+  - type: remove_nan_features
+  
+  - type: filter
+    query: "Metadata_JCP2022 != 'JCP2022_999999'"
+  
+  - type: filter
+    query: "Metadata_control_type == 'trt'"
+
+average_precision:
+  params:
+    pos_sameby: ["Metadata_JCP2022"]
+    pos_diffby: []
+    neg_sameby: []
+    neg_diffby: ["Metadata_JCP2022"]
+    batch_size: 20000
+    distance: "cosine"
+
+mean_average_precision:
+  params:
+    sameby: ["Metadata_JCP2022"]
+    null_size: 20000
+    threshold: 0.1
+    seed: 12527
+
+output:
+  path: "output/phenotypic-activity-var_mad_int_featselect_harmony-target2.csv.gz"
+  save_ap_scores: false
+
+plotting:
+  enabled: false  # Enable if you want plots

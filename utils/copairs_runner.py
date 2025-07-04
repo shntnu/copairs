@@ -34,7 +34,7 @@ class CopairsRunner:
 
     This runner supports:
     - Loading data from CSV/Parquet files
-    - Preprocessing steps (filtering, reference assignment)
+    - Preprocessing steps (filtering, reference assignment, metadata merging, aggregation)
     - Running average precision calculations
     - Running mean average precision with significance testing
     - Plotting mAP vs -log10(p-value) scatter plots
@@ -207,6 +207,9 @@ class CopairsRunner:
         - filter_by_external_csv: Filter based on external CSV file
         - aggregate_replicates: Aggregate by taking median of features
         - add_column_from_query: Add column from pandas eval expression (optional: fill_value)
+        - merge_metadata: Merge external CSV metadata (params: source, on, how)
+        - filter_single_replicates: Remove groups with < min_replicates members
+        - filter_by_source_list: Filter to specific sources for integrated analyses
 
         External function steps (parameters under 'params'):
         - apply_assign_reference: Apply copairs.matching.assign_reference_index
@@ -315,6 +318,69 @@ class CopairsRunner:
                 )
                 logger.info(
                     f"Added column '{column_name}' (dtype: {df[column_name].dtype}){nan_info}"
+                )
+
+            elif step_type == "merge_metadata":
+                # Merge external metadata from CSV file
+                source_path = Path(step["source"])
+                on_columns = step["on"]
+                how = step.get("how", "left")
+
+                # Load external metadata
+                try:
+                    metadata_df = pd.read_csv(source_path)
+                    logger.info(
+                        f"Loaded metadata from {source_path}: {len(metadata_df)} rows"
+                    )
+                except Exception as e:
+                    logger.error(f"Failed to load metadata from {source_path}: {e}")
+                    raise
+
+                # Perform merge
+                original_len = len(df)
+                df = df.merge(metadata_df, on=on_columns, how=how)
+                logger.info(
+                    f"Merged metadata on {on_columns} ({how} join): "
+                    f"{original_len} -> {len(df)} rows"
+                )
+
+            elif step_type == "filter_single_replicates":
+                # Remove groups with insufficient replicates
+                groupby_cols = step["groupby"]
+                min_replicates = step.get("min_replicates", 2)
+
+                # Count replicates per group
+                replicate_counts = df.groupby(groupby_cols).size()
+                keep_groups = replicate_counts[replicate_counts >= min_replicates].index
+
+                # Filter dataframe based on group membership
+                original_len = len(df)
+                if len(groupby_cols) == 1:
+                    # Single groupby column - simple isin filter
+                    df = df[df[groupby_cols[0]].isin(keep_groups)]
+                else:
+                    # Multiple groupby columns - merge approach
+                    keep_df = pd.DataFrame(keep_groups.tolist(), columns=groupby_cols)
+                    df = df.merge(keep_df, on=groupby_cols, how="inner")
+
+                filtered_count = original_len - len(df)
+                logger.info(
+                    f"Filtered {filtered_count} rows with < {min_replicates} replicates, "
+                    f"kept {len(df)} rows"
+                )
+
+            elif step_type == "filter_by_source_list":
+                # Filter to specific sources for integrated analyses
+                allowed_sources = step["sources"]
+                source_column = step.get("column", "Metadata_Source")
+
+                # Apply filter
+                original_len = len(df)
+                df = df[df[source_column].isin(allowed_sources)]
+
+                logger.info(
+                    f"Filtered to {len(df)}/{original_len} rows from sources: "
+                    f"{allowed_sources}"
                 )
 
             else:

@@ -1,0 +1,50 @@
+# Phenotypic activity analysis for CRISPR perturbations
+# Corresponds to: 0.1.8.phenotypic-activity-crispr.py
+
+data:
+  path: "../profiles/profiles_var_mad_int_featselect_harmony.parquet"
+  metadata_regex: "^Metadata"
+
+preprocessing:
+  # Filter for CRISPR plates only
+  - type: filter
+    query: "Metadata_PlateType == 'CRISPR'"
+  
+  # Remove features with NaN values
+  - type: remove_nan_features
+  
+  # Filter out empty wells
+  - type: filter
+    query: "Metadata_JCP2022 != 'JCP2022_999999'"
+  
+  # Keep only treatments (not controls)
+  - type: filter
+    query: "Metadata_control_type == 'trt'"
+  
+  # Note: The original script removes reagents with only one replicate
+  # This would require a custom preprocessing step in the runner:
+  # - type: filter_single_replicates
+  #   groupby: ["Metadata_JCP2022"]
+
+average_precision:
+  params:
+    pos_sameby: ["Metadata_JCP2022"]
+    pos_diffby: []
+    neg_sameby: []
+    neg_diffby: ["Metadata_JCP2022"]
+    batch_size: 20000
+    distance: "cosine"
+
+mean_average_precision:
+  params:
+    sameby: ["Metadata_JCP2022"]
+    null_size: 20000
+    threshold: 0.1
+    seed: 12527
+
+output:
+  path: "output/phenotypic-activity-var_mad_int_featselect_harmony-crispr.csv.gz"
+  save_ap_scores: false
+
+plotting:
+  enabled: false

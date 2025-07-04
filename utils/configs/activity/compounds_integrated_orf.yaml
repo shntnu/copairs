@@ -1,0 +1,46 @@
+# Phenotypic activity analysis for compounds integrated with ORF
+# Corresponds to: 0.1.3.phenotypic-activity-compounds-integrated-orf.py
+
+data:
+  path: "../profiles/integrated/profiles_var_mad_int_featselect_harmony.parquet"
+  metadata_regex: "^Metadata"
+
+preprocessing:
+  # Filter for specific sources that are part of the integrated dataset
+  # These are the compound sources that can be integrated with ORF
+  - type: filter
+    query: "Metadata_Source in ['source_2', 'source_3', 'source_5', 'source_9', 'source_10']"
+  
+  # Remove features with NaN values
+  - type: remove_nan_features
+  
+  # Filter out empty wells
+  - type: filter
+    query: "Metadata_JCP2022 != 'JCP2022_999999'"
+  
+  # Keep only treatments
+  - type: filter
+    query: "Metadata_control_type == 'trt'"
+
+average_precision:
+  params:
+    pos_sameby: ["Metadata_JCP2022"]
+    pos_diffby: []
+    neg_sameby: []
+    neg_diffby: ["Metadata_JCP2022"]
+    batch_size: 20000
+    distance: "cosine"
+
+mean_average_precision:
+  params:
+    sameby: ["Metadata_JCP2022"]
+    null_size: 20000
+    threshold: 0.1
+    seed: 12527
+
+output:
+  path: "output/phenotypic-activity-var_mad_int_featselect_harmony-integrated-orf.csv.gz"
+  save_ap_scores: false
+
+plotting:
+  enabled: false

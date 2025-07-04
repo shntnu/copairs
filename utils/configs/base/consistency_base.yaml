@@ -1,0 +1,57 @@
+# Base configuration for phenotypic consistency analysis
+# This file contains common settings shared across all consistency analyses
+
+preprocessing:
+  # Remove features with NaN values
+  - type: remove_nan_features
+  
+  # Remove rows with missing targets
+  - type: dropna
+    columns: ["Metadata_target"]
+  
+  # Filter out empty wells
+  - type: filter
+    query: "Metadata_JCP2022 != 'JCP2022_999999'"
+  
+  # Remove controls (consistency is only for treatments)
+  - type: filter
+    query: "Metadata_control_type == 'trt'"
+  
+  # Split pipe-separated target values into lists for multilabel analysis
+  - type: split_multilabel
+    column: "Metadata_target"
+    separator: "|"
+  
+  # Aggregate replicates by taking median (consensus)
+  - type: aggregate_replicates
+    groupby: ["Metadata_JCP2022", "Metadata_target"]
+
+average_precision:
+  # Use multilabel since compounds can have multiple targets
+  multilabel: true
+  
+  params:
+    # Positive pairs: perturbations sharing the same target
+    pos_sameby: ["Metadata_target"]
+    pos_diffby: []
+    
+    # Negative pairs: perturbations with different targets
+    neg_sameby: []
+    neg_diffby: ["Metadata_target"]
+    
+    # Specify the multilabel column
+    multilabel_col: "Metadata_target"
+    
+    # Performance settings
+    batch_size: 20000
+    distance: "cosine"  # Note: scripts use abs_cosine, may need runner update
+
+mean_average_precision:
+  params:
+    sameby: ["Metadata_target"]  # Group by target
+    null_size: 20000             # Number of permutations
+    threshold: 0.05              # FDR threshold for consistency
+    seed: 12527                  # For reproducibility
+
+output:
+  save_ap_scores: false  # Set to true if you need raw AP scores

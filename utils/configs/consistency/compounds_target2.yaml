@@ -1,0 +1,67 @@
+# Phenotypic consistency analysis for TARGET2 compounds
+# Corresponds to: 1.0.0.phenotypic-consistency-target2.py
+
+data:
+  path: "../profiles/profiles_var_mad_int_featselect_harmony.parquet"
+  metadata_regex: "^Metadata"
+
+preprocessing:
+  # Note: Original scripts merge external metadata for targets
+  # This would require extending the runner with a merge_metadata step
+  
+  # Filter for TARGET2 plates only
+  - type: filter
+    query: "Metadata_PlateType == 'TARGET2'"
+  
+  # Remove specific problematic sources
+  - type: filter
+    query: "Metadata_Source not in ['source_4', 'source_13']"
+  
+  # Remove features with NaN values
+  - type: remove_nan_features
+  
+  # Remove rows with missing targets
+  - type: dropna
+    columns: ["Metadata_target"]
+  
+  # Filter out empty wells
+  - type: filter
+    query: "Metadata_JCP2022 != 'JCP2022_999999'"
+  
+  # Keep only treatments
+  - type: filter
+    query: "Metadata_control_type == 'trt'"
+  
+  # Split pipe-separated target values
+  - type: split_multilabel
+    column: "Metadata_target"
+    separator: "|"
+  
+  # Aggregate replicates by taking median
+  - type: aggregate_replicates
+    groupby: ["Metadata_JCP2022", "Metadata_target"]
+
+average_precision:
+  multilabel: true
+  params:
+    pos_sameby: ["Metadata_target"]
+    pos_diffby: []
+    neg_sameby: []
+    neg_diffby: ["Metadata_target"]
+    multilabel_col: "Metadata_target"
+    batch_size: 20000
+    distance: "cosine"  # Note: scripts use abs_cosine
+
+mean_average_precision:
+  params:
+    sameby: ["Metadata_target"]
+    null_size: 20000
+    threshold: 0.05
+    seed: 12527
+
+output:
+  path: "output/phenotypic-consistency-var_mad_int_featselect_harmony-target2-target-retrieval.csv.gz"
+  save_ap_scores: false
+
+plotting:
+  enabled: false

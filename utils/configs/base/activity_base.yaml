@@ -1,0 +1,44 @@
+# Base configuration for phenotypic activity analysis
+# This file contains common settings shared across all activity analyses
+
+# Note: The preprocessing steps here assume certain operations that aren't yet
+# implemented in the runner. You'll need to extend the runner to support:
+# - Merging external metadata files
+# - Filtering single replicates
+# - More complex control type assignment
+
+preprocessing:
+  # Remove features with NaN values
+  - type: remove_nan_features
+  
+  # Filter out empty wells (common across all analyses)
+  - type: filter
+    query: "Metadata_JCP2022 != 'JCP2022_999999'"
+  
+  # Remove controls from treatment analysis
+  - type: filter
+    query: "Metadata_control_type == 'trt'"
+
+average_precision:
+  params:
+    # Positive pairs: replicates of the same perturbation
+    pos_sameby: ["Metadata_JCP2022"]
+    pos_diffby: []
+    
+    # Negative pairs: different perturbations
+    neg_sameby: []
+    neg_diffby: ["Metadata_JCP2022"]
+    
+    # Performance settings
+    batch_size: 20000
+    distance: "cosine"
+
+mean_average_precision:
+  params:
+    sameby: ["Metadata_JCP2022"]  # Group by perturbation
+    null_size: 20000               # Number of permutations
+    threshold: 0.1                 # FDR threshold for activity
+    seed: 12527                    # For reproducibility
+
+output:
+  save_ap_scores: false  # Set to true if you need raw AP scores
