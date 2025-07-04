@@ -1,0 +1,13 @@
+jobs:
+  - name: file1_lowdose_seed1
+    overrides:
+      - data.path=data/file1.csv
+      - preprocessing[0].params.query="dose < 1"
+      - mean_average_precision.seed=1
+
+  - name: file2_highdose_seed42
+    overrides:
+      - data.path=data/file2.csv
+      - preprocessing[0].params.query="dose >= 1"
+      - mean_average_precision.seed=42
+      - mean_average_precision.threshold=0.10

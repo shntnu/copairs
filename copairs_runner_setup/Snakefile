@@ -1,0 +1,12 @@
+import yaml, os
+
+with open("conf/jobs_list.yaml") as fh:
+    JOBS = yaml.safe_load(fh)["jobs"]
+
+rule all:
+    input: expand("results/{name}.done", name=[j["name"] for j in JOBS])
+
+rule grid:
+    output: touch("results/{name}.done")
+    params: overrides=lambda wildcards: " ".join(next(j["overrides"] for j in JOBS if j["name"]==wildcards.name))
+    shell:  "python -m copairs_runner.cli {params.overrides}"
