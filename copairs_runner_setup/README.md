@@ -1,4 +1,17 @@
-# Runner
+# Copairs Runner v2
+
+> ⚠️ **CRITICAL WARNING: EXPERIMENTAL & UNTESTED CODE** ⚠️
+> 
+> **DO NOT USE IN PRODUCTION**
+> 
+> This is a work-in-progress prototype that has NOT been tested. It likely contains:
+> - Missing dependencies and import errors
+> - Incomplete implementations
+> - Bugs and edge cases
+> - Untested code paths
+> 
+> This codebase is provided as a reference architecture only. Significant development
+> and testing work is required before any production use.
 
 ## Problem Statement — Why this codebase exists
 
@@ -172,8 +185,33 @@ rule grid:
 
 You can now clone, run any of the four entry points, and scale up or down without rewriting the core runner code.
 
+---
 
-## Future improvements
+## **5. Current Status & Known Issues**
+
+### **Implementation Status**
+- ✅ Core architecture defined
+- ✅ Pydantic v2 config models
+- ✅ Basic runner skeleton
+- ❌ Missing __init__.py files for Python packages
+- ❌ Only one preprocessing step implemented ("filter")
+- ❌ No base.yaml config file
+- ❌ Output path configuration missing
+- ❌ Import paths need adjustment (copairs_runner vs copairs_runner_v2)
+- ❌ No tests
+- ❌ No dependency management files
+
+### **Before You Can Run This**
+1. Create missing `__init__.py` files in package directories
+2. Create `conf/base.yaml` with proper defaults
+3. Fix import paths throughout the codebase
+4. Install dependencies: `hydra-core`, `pydantic>=2`, `copairs`, `pandas`, `numpy`, etc.
+5. Implement remaining preprocessing steps
+6. Add proper error handling and logging
+
+---
+
+## **6. Future improvements</
 
 ### **Improvements**
 
@@ -185,3 +223,42 @@ You can now clone, run any of the four entry points, and scale up or down withou
 | **Helper script for Nextflow**         | Move the inline YAML→JSON logic to scripts/parse\_jobs.py; call that from main.nf.                              | Shortens the Nextflow file, improves readability and re-use.                             |
 | **Container / environment spec**       | Provide a Dockerfile or Conda environment.yml.                                                                  | Guarantees identical runtime environments for local dev, HPC, and cloud nodes.           |
 | **README badges & quick-start matrix** | Add CI badge, PyPI version (if packaged), and a table of the four launch commands (local → cluster).            | New contributors instantly understand how to run and scale the project.                  |
+
+---
+
+## **7. Development Roadmap**
+
+### **Phase 1: Make it Work (Current Focus)**
+- [ ] Add missing `__init__.py` files
+- [ ] Create `conf/base.yaml` with minimal working config
+- [ ] Fix all import paths
+- [ ] Create requirements.txt with pinned dependencies
+- [ ] Implement core preprocessing steps from utils/copairs_runner.py
+- [ ] Add basic smoke tests
+
+### **Phase 2: Make it Right**
+- [ ] Add comprehensive unit tests
+- [ ] Add integration tests with sample data
+- [ ] Implement proper logging configuration
+- [ ] Add input validation and error handling
+- [ ] Create Docker container
+- [ ] Add CI/CD pipeline
+
+### **Phase 3: Make it Fast**
+- [ ] Profile and optimize bottlenecks
+- [ ] Add caching for expensive operations
+- [ ] Implement parallel preprocessing where applicable
+- [ ] Add resource monitoring
+- [ ] Benchmark against utils/ implementation
+
+---
+
+## **Contributing**
+
+Given the experimental nature of this codebase, contributions should focus on:
+1. Fixing the known issues listed above
+2. Adding tests
+3. Improving documentation
+4. Validating against real Cell Painting datasets
+
+Please do not use this code for production workloads until it has been properly tested and validated.
